@@ -468,7 +468,7 @@ document.addEventListener("DOMContentLoaded", () => {
 ===================================== */
 
 // Pon aquí SOLO el ID del vídeo
-const YOUTUBE_VIDEO_ID = "EYtOWu2XpDs";
+const YOUTUBE_VIDEO_ID = "hd6KIk2ijpE";
 
 let youtubePlayer = null;
 let youtubeReady = false;
