@@ -467,94 +467,197 @@ document.addEventListener("DOMContentLoaded", () => {
    MÚSICA DE FONDO - YOUTUBE
 ===================================== */
 
-// Pon aquí SOLO el ID del vídeo
+/*
+ * Canción:
+ * https://www.youtube.com/watch?v=hd6KIk2ijpE
+ */
 const YOUTUBE_VIDEO_ID = "hd6KIk2ijpE";
 
-let youtubePlayer = null;
-let youtubeReady = false;
-let musicStarted = false;
+/*
+ * Volumen entre 0 y 100.
+ */
+const MUSIC_VOLUME = 100;
 
+let youtubePlayer = null;
+
+let youtubeReady = false;
 
 /*
- * YouTube llama automáticamente esta función
- * cuando termina de cargar la API.
+ * IMPORTANTE:
+ *
+ * Esto indica si YA hemos conseguido
+ * activar el SONIDO.
+ *
+ * No es lo mismo que simplemente
+ * reproducir el vídeo silenciado.
  */
+let soundActivated = false;
+
+
+
+/* =====================================
+   API DE YOUTUBE PREPARADA
+===================================== */
+
 window.onYouTubeIframeAPIReady = function () {
 
-    console.log("✅ API de YouTube cargada");
+    console.log(
+        "✅ API de YouTube cargada"
+    );
 
     youtubePlayer = new YT.Player(
         "youtube-player",
         {
-            width: "300",
-            height: "200",
+
+            width: 200,
+
+            height: 200,
 
             videoId: YOUTUBE_VIDEO_ID,
 
             playerVars: {
-                autoplay: 0,
+
+                /*
+                 * Intentamos comenzar automáticamente.
+                 *
+                 * Como inicialmente estará silenciado,
+                 * Chrome suele permitirlo.
+                 */
+                autoplay: 1,
+
+
+                /*
+                 * Sin controles visuales.
+                 */
                 controls: 0,
 
+
+                /*
+                 * Repetición infinita.
+                 *
+                 * YouTube necesita playlist con el mismo
+                 * ID para repetir un único vídeo.
+                 */
                 loop: 1,
+
                 playlist: YOUTUBE_VIDEO_ID,
 
+
+                /*
+                 * Mejor comportamiento en móviles.
+                 */
                 playsinline: 1,
-                rel: 0
+
+
+                /*
+                 * No mostrar vídeos relacionados
+                 * de otros canales.
+                 */
+                rel: 0,
+
+
+                /*
+                 * Dominio desde el que se está ejecutando.
+                 *
+                 * En GitHub Pages será algo parecido a:
+                 *
+                 * https://usuario.github.io
+                 */
+                origin: window.location.origin
             },
 
             events: {
 
+
+                /* =====================================
+                   REPRODUCTOR PREPARADO
+                ====================================== */
+
                 onReady: function (event) {
 
-                    console.log("✅ Reproductor de YouTube preparado");
+                    console.log(
+                        "✅ Reproductor de YouTube preparado"
+                    );
 
                     youtubeReady = true;
 
-                    event.target.setVolume(100);
 
                     /*
-                     * Intentamos reproducir automáticamente.
+                     * Configuramos el volumen desde
+                     * el principio.
+                     */
+                    event.target.setVolume(
+                        MUSIC_VOLUME
+                    );
+
+
+                    /*
+                     * Primero iniciamos SILENCIADO.
                      *
-                     * Chrome probablemente bloqueará esto,
-                     * pero no pasa nada porque tenemos
-                     * el fallback del primer clic.
+                     * Los navegadores normalmente permiten
+                     * autoplay silenciado.
+                     */
+                    event.target.mute();
+
+
+                    /*
+                     * Iniciar reproducción.
                      */
                     event.target.playVideo();
+
+
+                    console.log(
+                        "🔇 Música iniciada silenciada"
+                    );
+
+                    console.log(
+                        "👉 El primer clic activará el sonido"
+                    );
                 },
 
+
+
+                /* =====================================
+                   CAMBIO DE ESTADO
+                ====================================== */
 
                 onStateChange: function (event) {
 
                     const states = {
-                        "-1": "NO INICIADO",
-                        "0": "FINALIZADO",
-                        "1": "REPRODUCIENDO",
-                        "2": "PAUSADO",
-                        "3": "CARGANDO",
-                        "5": "VIDEO PREPARADO"
+
+                        "-1":
+                            "NO INICIADO",
+
+                        "0":
+                            "FINALIZADO",
+
+                        "1":
+                            "REPRODUCIENDO",
+
+                        "2":
+                            "PAUSADO",
+
+                        "3":
+                            "CARGANDO",
+
+                        "5":
+                            "VIDEO PREPARADO"
                     };
+
 
                     console.log(
                         "🎵 Estado YouTube:",
-                        states[event.data] ?? event.data
+                        states[event.data] ??
+                        event.data
                     );
 
 
-                    if (
-                        event.data ===
-                        YT.PlayerState.PLAYING
-                    ) {
-
-                        console.log(
-                            "❤️ LA MÚSICA ESTÁ REPRODUCIÉNDOSE"
-                        );
-
-                        musicStarted = true;
-                    }
-
-
                     /*
-                     * Seguridad adicional para el loop
+                     * Si termina por algún motivo,
+                     * lo reiniciamos manualmente.
+                     *
+                     * Es una seguridad adicional al
+                     * loop configurado anteriormente.
                      */
                     if (
                         event.data ===
@@ -565,13 +668,39 @@ window.onYouTubeIframeAPIReady = function () {
                             "🔁 Reiniciando canción"
                         );
 
-                        youtubePlayer.seekTo(0);
+                        event.target.seekTo(
+                            0,
+                            true
+                        );
 
-                        youtubePlayer.playVideo();
+                        event.target.playVideo();
                     }
-
                 },
 
+
+
+                /* =====================================
+                   AUTOPLAY BLOQUEADO
+                ====================================== */
+
+                onAutoplayBlocked: function () {
+
+                    console.warn(
+                        "⚠️ El navegador bloqueó " +
+                        "el autoplay."
+                    );
+
+                    console.warn(
+                        "👉 La canción se iniciará " +
+                        "con la primera interacción."
+                    );
+                },
+
+
+
+                /* =====================================
+                   ERRORES
+                ====================================== */
 
                 onError: function (event) {
 
@@ -580,34 +709,61 @@ window.onYouTubeIframeAPIReady = function () {
                         event.data
                     );
 
+
                     switch (event.data) {
 
+
                         case 2:
+
                             console.error(
-                                "ID del vídeo incorrecto."
+                                "El ID del vídeo no es válido."
                             );
+
                             break;
+
+
 
                         case 5:
+
                             console.error(
-                                "El vídeo no puede reproducirse en HTML5."
+                                "El vídeo no puede reproducirse " +
+                                "en el reproductor HTML5."
                             );
+
                             break;
+
+
 
                         case 100:
+
                             console.error(
-                                "El vídeo no existe o fue eliminado."
+                                "El vídeo no existe, es privado " +
+                                "o fue eliminado."
                             );
+
                             break;
+
+
 
                         case 101:
-                        case 150:
-                            console.error(
-                                "El propietario del vídeo no permite reproducirlo fuera de YouTube."
-                            );
-                            break;
-                    }
 
+                        case 150:
+
+                            console.error(
+                                "El propietario del vídeo no permite " +
+                                "reproducirlo fuera de YouTube."
+                            );
+
+                            break;
+
+
+
+                        default:
+
+                            console.error(
+                                "Error desconocido del reproductor."
+                            );
+                    }
                 }
             }
         }
@@ -615,40 +771,184 @@ window.onYouTubeIframeAPIReady = function () {
 };
 
 
+
+/* =====================================
+   ACTIVAR SONIDO
+===================================== */
+
+function activateBackgroundMusic() {
+
+    console.log(
+        "🖱️ Interacción detectada"
+    );
+
+
+    /*
+     * Si YouTube todavía no terminó
+     * de cargar, esperamos al siguiente
+     * clic.
+     */
+    if (!youtubeReady) {
+
+        console.log(
+            "⏳ YouTube todavía no está preparado"
+        );
+
+        return;
+    }
+
+
+    /*
+     * Si el sonido ya fue activado,
+     * no necesitamos hacer nada.
+     */
+    if (soundActivated) {
+
+        return;
+    }
+
+
+    console.log(
+        "🎵 Activando sonido..."
+    );
+
+
+    /*
+     * Quitar silencio.
+     */
+    youtubePlayer.unMute();
+
+
+    /*
+     * Volumen máximo.
+     */
+    youtubePlayer.setVolume(
+        MUSIC_VOLUME
+    );
+
+
+    /*
+     * Nos aseguramos de que siga
+     * reproduciéndose.
+     */
+    youtubePlayer.playVideo();
+
+
+    /*
+     * Esperamos un poco y comprobamos
+     * el estado REAL del reproductor.
+     */
+    setTimeout(
+        () => {
+
+            const state =
+                youtubePlayer.getPlayerState();
+
+            const muted =
+                youtubePlayer.isMuted();
+
+            const volume =
+                youtubePlayer.getVolume();
+
+
+            console.log(
+                "-----------------------------"
+            );
+
+            console.log(
+                "🎵 Estado:",
+                state
+            );
+
+            console.log(
+                "🔇 Silenciado:",
+                muted
+            );
+
+            console.log(
+                "🔊 Volumen:",
+                volume
+            );
+
+            console.log(
+                "-----------------------------"
+            );
+
+
+            /*
+             * Estado 1 = PLAYING
+             *
+             * muted false = tiene sonido
+             */
+            if (
+                state ===
+                    YT.PlayerState.PLAYING &&
+                muted === false
+            ) {
+
+                soundActivated = true;
+
+                console.log(
+                    "❤️ MÚSICA SONANDO CORRECTAMENTE"
+                );
+
+            } else {
+
+                console.warn(
+                    "⚠️ El navegador todavía no " +
+                    "permitió activar el audio."
+                );
+            }
+
+        },
+        300
+    );
+}
+
+
+
+/* =====================================
+   PRIMERA INTERACCIÓN
+===================================== */
+
 /*
- * Primer clic en cualquier lugar de la página.
+ * Usamos pointerdown porque ocurre
+ * inmediatamente cuando se hace clic
+ * o se toca la pantalla.
  *
- * No necesitas ningún botón.
+ * No aparece ningún botón de música.
+ *
+ * Si Jhuliana pulsa:
+ *
+ *     💌 Abrir mi carta
+ *
+ * ese mismo clic activa la canción.
+ */
+document.addEventListener(
+    "pointerdown",
+    activateBackgroundMusic,
+    true
+);
+
+
+/*
+ * Fallback adicional para navegadores
+ * donde pointerdown pueda comportarse
+ * de forma diferente.
  */
 document.addEventListener(
     "click",
-    function () {
-
-        console.log("🖱️ Clic detectado");
-
-        if (!youtubeReady) {
-
-            console.log(
-                "⏳ YouTube todavía no está preparado"
-            );
-
-            return;
-        }
+    activateBackgroundMusic,
+    true
+);
 
 
-        if (!musicStarted) {
-
-            console.log(
-                "🎵 Intentando iniciar música..."
-            );
-
-            youtubePlayer.unMute();
-
-            youtubePlayer.setVolume(40);
-
-            youtubePlayer.playVideo();
-
-        }
-
-    }
+/*
+ * Compatibilidad adicional con móviles
+ * antiguos.
+ */
+document.addEventListener(
+    "touchstart",
+    activateBackgroundMusic,
+    true
 );

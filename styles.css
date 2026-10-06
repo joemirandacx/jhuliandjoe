@@ -1165,3 +1165,14 @@ footer span {
         padding: 45px 25px;
     }
 }
+#youtube-player {
+    position: fixed;
+
+    width: 200px;
+    height: 200px;
+
+    left: -10000px;
+    top: 0;
+
+    pointer-events: none;
+}
