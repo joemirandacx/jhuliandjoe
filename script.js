@@ -461,3 +461,194 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 });
+
+
+/* =====================================
+   MÚSICA DE FONDO - YOUTUBE
+===================================== */
+
+// Pon aquí SOLO el ID del vídeo
+const YOUTUBE_VIDEO_ID = "EYtOWu2XpDs";
+
+let youtubePlayer = null;
+let youtubeReady = false;
+let musicStarted = false;
+
+
+/*
+ * YouTube llama automáticamente esta función
+ * cuando termina de cargar la API.
+ */
+window.onYouTubeIframeAPIReady = function () {
+
+    console.log("✅ API de YouTube cargada");
+
+    youtubePlayer = new YT.Player(
+        "youtube-player",
+        {
+            width: "300",
+            height: "200",
+
+            videoId: YOUTUBE_VIDEO_ID,
+
+            playerVars: {
+                autoplay: 0,
+                controls: 0,
+
+                loop: 1,
+                playlist: YOUTUBE_VIDEO_ID,
+
+                playsinline: 1,
+                rel: 0
+            },
+
+            events: {
+
+                onReady: function (event) {
+
+                    console.log("✅ Reproductor de YouTube preparado");
+
+                    youtubeReady = true;
+
+                    event.target.setVolume(100);
+
+                    /*
+                     * Intentamos reproducir automáticamente.
+                     *
+                     * Chrome probablemente bloqueará esto,
+                     * pero no pasa nada porque tenemos
+                     * el fallback del primer clic.
+                     */
+                    event.target.playVideo();
+                },
+
+
+                onStateChange: function (event) {
+
+                    const states = {
+                        "-1": "NO INICIADO",
+                        "0": "FINALIZADO",
+                        "1": "REPRODUCIENDO",
+                        "2": "PAUSADO",
+                        "3": "CARGANDO",
+                        "5": "VIDEO PREPARADO"
+                    };
+
+                    console.log(
+                        "🎵 Estado YouTube:",
+                        states[event.data] ?? event.data
+                    );
+
+
+                    if (
+                        event.data ===
+                        YT.PlayerState.PLAYING
+                    ) {
+
+                        console.log(
+                            "❤️ LA MÚSICA ESTÁ REPRODUCIÉNDOSE"
+                        );
+
+                        musicStarted = true;
+                    }
+
+
+                    /*
+                     * Seguridad adicional para el loop
+                     */
+                    if (
+                        event.data ===
+                        YT.PlayerState.ENDED
+                    ) {
+
+                        console.log(
+                            "🔁 Reiniciando canción"
+                        );
+
+                        youtubePlayer.seekTo(0);
+
+                        youtubePlayer.playVideo();
+                    }
+
+                },
+
+
+                onError: function (event) {
+
+                    console.error(
+                        "❌ ERROR DE YOUTUBE:",
+                        event.data
+                    );
+
+                    switch (event.data) {
+
+                        case 2:
+                            console.error(
+                                "ID del vídeo incorrecto."
+                            );
+                            break;
+
+                        case 5:
+                            console.error(
+                                "El vídeo no puede reproducirse en HTML5."
+                            );
+                            break;
+
+                        case 100:
+                            console.error(
+                                "El vídeo no existe o fue eliminado."
+                            );
+                            break;
+
+                        case 101:
+                        case 150:
+                            console.error(
+                                "El propietario del vídeo no permite reproducirlo fuera de YouTube."
+                            );
+                            break;
+                    }
+
+                }
+            }
+        }
+    );
+};
+
+
+/*
+ * Primer clic en cualquier lugar de la página.
+ *
+ * No necesitas ningún botón.
+ */
+document.addEventListener(
+    "click",
+    function () {
+
+        console.log("🖱️ Clic detectado");
+
+        if (!youtubeReady) {
+
+            console.log(
+                "⏳ YouTube todavía no está preparado"
+            );
+
+            return;
+        }
+
+
+        if (!musicStarted) {
+
+            console.log(
+                "🎵 Intentando iniciar música..."
+            );
+
+            youtubePlayer.unMute();
+
+            youtubePlayer.setVolume(40);
+
+            youtubePlayer.playVideo();
+
+        }
+
+    }
+);
